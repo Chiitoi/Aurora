@@ -1,0 +1,16 @@
+[dependencies]
+deadpool-postgres = "0.10.2"
+dotenv = "0.15.0"
+futures-util = "0.3.21"
+lazy_static = "1.4.0"
+tokio = { default-features = false, features = ["macros", "rt-multi-thread"], version = "1.19.2" }
+tokio-postgres = "0.7.6"
+twilight-cache-inmemory = { features = ["permission-calculator"], version = "0.11.0" }
+twilight-gateway = "0.11.0"
+twilight-http = "0.11.0"
+twilight-model = "0.11.0"
+
+[package]
+edition = "2021"
+name = "roxanne"
+version = "0.1.0"
