@@ -1,9 +1,11 @@
+use crate::database::Database;
 use twilight_cache_inmemory::{InMemoryCache, ResourceType};
 use twilight_gateway::Cluster;
 
 pub struct Context {
     pub cache: InMemoryCache,
     pub cluster: Cluster,
+    pub database: Database
 }
 
 impl Context {
@@ -20,7 +22,8 @@ impl Context {
                 .message_cache_size(15)
                 .resource_types(resource_types)
                 .build(),
-            cluster
+            cluster,
+            database: Database::new()
         }
     }
 }

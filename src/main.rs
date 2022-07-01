@@ -1,4 +1,5 @@
 mod constants;
+mod database;
 mod events;
 mod util;
 
@@ -29,6 +30,7 @@ async fn main() -> anyhow::Result<()> {
 
     tokio::spawn(async move {
         context_clone.cluster.up().await;
+        context_clone.database.create_tables().await;
     });
 
     while let Some((_shard_id, event)) = events.next().await {
