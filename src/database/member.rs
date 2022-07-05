@@ -9,7 +9,8 @@ pub struct Member {
     pub message_xp: u64,
     pub message_xp_updated_at: NaiveDateTime,
     pub voice_xp: u64,
-    pub bio: String
+    pub bio: String,
+    pub spouse_id: Id<UserMarker>
 }
 
 impl From<Row> for Member {
@@ -20,7 +21,8 @@ impl From<Row> for Member {
             message_xp: row.get::<_, i64>(2) as u64,
             message_xp_updated_at: row.get::<_, NaiveDateTime>(3),
             voice_xp: row.get::<_, i64>(4) as u64,
-            bio: row.get(5)
+            bio: row.get(5),
+            spouse_id: Id::new(row.get::<_, i64>(6) as u64),
         }
     }
 }
@@ -101,6 +103,30 @@ impl Database {
                 &(xp as i64)
             ]
         ).await.unwrap();
+    }
+
+    pub async fn update_spouse_id(&self, guild_id: Id<GuildMarker>, member_id: Id<UserMarker>, spouse_id: Option<Id<UserMarker>>) {
+        let client = self.get_object().await;
+        let query = "UPDATE member SET spouse_id = $3 WHERE guild_id = $1 AND member_id = $2;";
+
+        match spouse_id {
+            Some(spouse_id) => client.query(
+                query,
+                &[
+                    &(guild_id.get() as i64),
+                    &(member_id.get() as i64),
+                    &(spouse_id.get() as i64)
+                ]
+            ).await.unwrap(),
+            None => client.query(
+                query,
+                &[
+                    &(guild_id.get() as i64),
+                    &(member_id.get() as i64),
+                    &None::<&[i64]>
+                ]
+            ).await.unwrap()
+        };
     }
 
     pub async fn update_voice_xp(&self, guild_id: Id<GuildMarker>, member_id: Id<UserMarker>, xp: u64) {
