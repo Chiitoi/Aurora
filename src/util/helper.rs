@@ -1,6 +1,6 @@
 use crate::{
     commands::*,
-    constants::DEVELOPMENT_GUILD_ID,
+    constants::{DEVELOPMENT_GUILD_ID, ENVIRONMENT},
     util::context::Context
 };
 use std::sync::Arc;
@@ -184,7 +184,7 @@ pub fn humanize(mut milliseconds: u64) -> String {
     duration
 }
 
-pub async fn register_guild_commands(context: &Arc<Context>) {
+pub async fn register_commands(context: &Arc<Context>) {
     let commands: Vec<Command> = vec![
         Action::create_action_command(Action::Bite, "30% chance to flinch the target".into()),
         Action::create_action_command(Action::Cuddle, "Big spoon or little spoon?".into()),
@@ -200,11 +200,19 @@ pub async fn register_guild_commands(context: &Arc<Context>) {
         RateCommand::create_command().into(),
         ShipCommand::create_command().into()
     ];
-    
-    context
-        .interaction_client()
-        .set_guild_commands(*DEVELOPMENT_GUILD_ID, &commands)
-        .exec()
-        .await
-        .unwrap();
+    let interaction_client = context.interaction_client();
+
+    if ENVIRONMENT.to_lowercase() == "production" {
+        interaction_client
+            .set_global_commands(&commands)
+            .exec()
+            .await
+            .unwrap();
+    } else {
+        interaction_client
+            .set_guild_commands(*DEVELOPMENT_GUILD_ID, &commands)
+            .exec()
+            .await
+            .unwrap();
+    }
 }

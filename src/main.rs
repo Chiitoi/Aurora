@@ -25,7 +25,7 @@ async fn main() -> anyhow::Result<()> {
     let context_clone = context.clone();
 
     context_clone.database().create_tables().await;
-    util::helper::register_guild_commands(&context).await;
+    util::helper::register_commands(&context).await;
 
     tokio::spawn(async move {
         context_clone.cluster().up().await;    
