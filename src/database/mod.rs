@@ -1,8 +1,9 @@
 pub mod action;
 pub mod level_role;
-pub mod shared_role;
-pub mod setting;
 pub mod member;
+pub mod setting;
+pub mod shared_role;
+pub mod ship;
 
 use crate::constants::DATABASE_URL;
 use deadpool_postgres::{Client, Manager, ManagerConfig, Pool, RecyclingMethod};
@@ -71,10 +72,9 @@ impl Database {
                 guild_id INT8 NOT NULL,
                 member_id INT8 NOT NULL,
                 message_xp INT8 NOT NULL DEFAULT 0,
-                message_xp_updated_at TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                message_xp_updated_at TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 voice_xp INT8 NOT NULL DEFAULT 0,
                 bio TEXT DEFAULT NULL,
-                spouse_id INT8 DEFAULT NULL,
                 CONSTRAINT ck_member PRIMARY KEY (guild_id, member_id)
             );
             CREATE TABLE IF NOT EXISTS public.setting (
@@ -93,6 +93,14 @@ impl Database {
                 owner_ids INT8[] NOT NULL DEFAULT '{}',
                 CONSTRAINT ck_shared_role PRIMARY KEY (guild_id, role_id)
             );
+            CREATE TABLE IF NOT EXISTS public.ship (
+                guild_id INT8 NOT NULL,
+                combined_ids TEXT NOT NULL,
+                name TEXT NOT NULL DEFAULT 'Bluenose',
+                created_at TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_ship_combined_ids ON public.ship USING btree (combined_ids);
         ";
 
         client.batch_execute(schema_query).await.unwrap();

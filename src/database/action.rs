@@ -1,46 +1,111 @@
 use crate::database::Database;
+use std::fmt;
 use tokio_postgres::Row;
 use twilight_model::id::{Id, marker::{GuildMarker, UserMarker}};
 
-pub struct Action {
-    pub guild_id: Id<GuildMarker>,
-    pub member_id: Id<UserMarker>,
-    pub recipient_id: Id<UserMarker>,
-    pub bite: u16,
+pub struct CountedAction {
     pub cuddle: u16,
     pub handhold: u16,
     pub hug: u16,
-    pub kill: u16,
     pub kiss: u16,
-    pub pat: u16,
-    pub pinch: u16,
-    pub poke: u16,
-    pub punch: u16,
-    pub tickle: u16,
 }
 
-impl From<Row> for Action {
+impl fmt::Display for CountedAction {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let cuddle_text = if self.cuddle == 1 { ":heart: 1 cuddle".to_string() } else { format!(":heart: {} cuddles", self.cuddle) };
+        let handhold_text = if self.handhold == 1 { ":handshake: 1 handhold".to_string() } else { format!(":handshake: {} handholds", self.cuddle) };
+        let hug_text = if self.hug == 1 { ":hugging: 1 hug".to_string() } else { format!(":hugging: {} hugs", self.cuddle) };
+        let kiss_text = if self.kiss == 1 { ":kissing_heart: 1 kiss".to_string() } else { format!(":kissing_heart: {} kisses", self.cuddle) };
+        let counts = if self.cuddle + self.handhold + self.hug + self.kiss > 0 {
+            let parts = vec![(self.cuddle, cuddle_text), (self.handhold, handhold_text), (self.hug, hug_text), (self.kiss, kiss_text)];
+            
+            parts.iter().filter_map(|(value, text)| {
+                if *value > 0 { Some(format!("{text}")) } else { None }
+            }).collect::<Vec<String>>().join("\n")
+        } else { ":pensive: No counted actions...".to_string() };
+
+        write!(f, "{counts}")
+    }
+}
+
+impl From<Row> for CountedAction {
     fn from(row: Row) -> Self {
         Self {
-            guild_id: Id::new(row.get::<_, i64>(0) as u64),
-            member_id: Id::new(row.get::<_, i64>(1) as u64),
-            recipient_id: Id::new(row.get::<_, i64>(2) as u64),
-            bite: row.get::<_, i16>(3) as u16,
-            cuddle: row.get::<_, i16>(4) as u16,
-            handhold: row.get::<_, i16>(5) as u16,
-            hug: row.get::<_, i16>(6) as u16,
-            kill: row.get::<_, i16>(7) as u16,
-            kiss: row.get::<_, i16>(8) as u16,
-            pat: row.get::<_, i16>(9) as u16,
-            pinch: row.get::<_, i16>(10) as u16,
-            poke: row.get::<_, i16>(11) as u16,
-            punch: row.get::<_, i16>(12) as u16,
-            tickle: row.get::<_, i16>(13) as u16,
+            cuddle: row.get::<_, i16>(0) as u16,
+            handhold: row.get::<_, i16>(1) as u16,
+            hug: row.get::<_, i16>(2) as u16,
+            kiss: row.get::<_, i16>(3) as u16,
         }
     }
 }
 
+
+
 impl Database {
+    pub async fn read_action_counts(&self, guild_id: Id<GuildMarker>, id_one: Id<UserMarker>, id_two: Id<UserMarker>) -> CountedAction {
+        let client = self.get_object().await;
+        let query = "
+            SELECT
+                COUNT(cuddle)::INT2 AS cuddle,
+                COUNT(handhold)::INT2 AS handhold,
+                COUNT(hug)::INT2 AS hug,
+                COUNT(kiss)::INT2 AS kiss
+            FROM
+                action
+            WHERE
+                guild_id = $1
+                AND ((member_id = $2 AND recipient_id = $3) OR (member_id = $3 AND recipient_id = $2));
+        ";
+
+        client.query_one(
+            query,
+            &[
+                &(guild_id.get() as i64),
+                &(id_one.get() as i64),
+                &(id_two.get() as i64)
+            ]
+        ).await.unwrap().into()
+    }
+
+    pub async fn read_kill_counts(&self, guild_id: Id<GuildMarker>, id_one: Id<UserMarker>, id_two: Id<UserMarker>) -> (u16, u16) {
+        let client = self.get_object().await;
+        let query = "
+            WITH id_one AS (
+                SELECT
+                    COALESCE(SUM(kill), 0)::INT2 AS id_one
+                FROM
+                    action
+                WHERE
+                    guild_id = $1
+                    AND (member_id = $2 AND recipient_id = $3)
+            ),
+            id_two AS (
+                SELECT
+                    COALESCE(SUM(kill), 0)::INT2 AS id_two
+                FROM
+                    action
+                WHERE
+                    guild_id = $1
+                    AND (member_id = $3 AND recipient_id = $2)
+            )
+            SELECT
+                *
+            FROM
+                id_one,
+                id_two;
+        ";
+        let row = client.query_one(
+            query,
+            &[
+                &(guild_id.get() as i64),
+                &(id_one.get() as i64),
+                &(id_two.get() as i64)
+            ]
+        ).await.unwrap();
+        
+        (row.get::<_, i16>(0) as u16, row.get::<_, i16>(1) as u16)
+    }
+
     pub async fn upsert_action(&self, guild_id: Id<GuildMarker>, member_id: Id<UserMarker>, recipient_id: Id<UserMarker>, action: &str) -> u16 {
         let client = self.get_object().await;
         let query = format!("

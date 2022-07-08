@@ -17,6 +17,7 @@ pub enum Action {
     Bite,
     Cuddle,
     Handhold,
+    Kill,
     Kiss,
     Pat,
     Pinch,
@@ -26,11 +27,12 @@ pub enum Action {
 }
 
 impl Action {
-    fn action_phrase(&self) -> &'static str {
+    pub fn action_phrase(&self) -> &'static str {
         match self {
             Action::Bite => "bites",
             Action::Cuddle => "cuddles",
             Action::Handhold => "holds hands with",
+            Action::Kill => "kills",
             Action::Kiss => "kisses",
             Action::Pat => "pats",
             Action::Pinch => "pinches",
@@ -40,11 +42,12 @@ impl Action {
         }
     }
 
-    fn as_plural(&self) -> &'static str {
+    pub fn as_plural(&self) -> &'static str {
         match self {
             Action::Bite => "bites",
             Action::Cuddle => "cuddles",
             Action::Handhold => "handholds",
+            Action::Kill => "kills",
             Action::Kiss => "kisses",
             Action::Pat => "pats",
             Action::Pinch => "pinches",
@@ -54,11 +57,12 @@ impl Action {
         }
     }
 
-    fn as_str(&self) -> &'static str {
+    pub fn as_str(&self) -> &'static str {
         match self {
             Action::Bite => "bite",
             Action::Cuddle => "cuddle",
             Action::Handhold => "handhold",
+            Action::Kill => "kill",
             Action::Kiss => "kiss",
             Action::Pat => "pat",
             Action::Pinch => "pinch",
@@ -132,8 +136,8 @@ pub async fn get_interaction_response(command: ApplicationCommand, context: &Arc
         InteractionResponse {
             data: Some(
                 InteractionResponseDataBuilder::new()
-                .embeds([embed])
-                .build()
+                    .embeds([embed])
+                    .build()
             ),
             kind: InteractionResponseType::ChannelMessageWithSource
         }
