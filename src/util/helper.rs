@@ -98,37 +98,37 @@ pub async fn handle_command(command: ApplicationCommand, context: Arc<Context>) 
 }
 
 pub async fn handle_component(component: MessageComponentInteraction, context: Arc<Context>) {
-    let mut button_presser_id = None;
-
     let interaction_response = if let Some(button_presser) = component.member {
         if let Some(mention) = component.message.mentions.into_iter().nth(0) {
             if button_presser.user.unwrap().id.eq(&mention.id) {
-                if component.data.custom_id == "accept" {
-                    button_presser_id = Some(mention.id);
-                    create_interaction_response(":tada: Congrats! Your ship has sailed! :tada:", false)
+                let (description, edit) = if component.data.custom_id == "accept" {
+                    let guild_id = component.guild_id.unwrap();
+                    let initiator_id = component.message.interaction.unwrap().user.id;
+                    
+                    context.database().create_ship(guild_id, initiator_id, mention.id).await;
+
+                    (":tada: Congrats! Your ship has sailed! :tada:".into(), "**SHIPPED!!**")
                 } else {
-                    create_interaction_response(format!("**{}** has sank the ship, it looks like it was never meant to be :pensive:", mention.name).as_str(), false)
-                }
+                    (format!("**{}** has sank the ship, it looks like it was never meant to be :pensive:", mention.name), "**RIP SHIP**")
+                };
+
+                context
+                    .http()
+                    .update_message(component.channel_id, component.message.id)
+                    .content(Some(edit))
+                    .unwrap()
+                    .components(Some(&[]))
+                    .unwrap()
+                    .exec()
+                    .await
+                    .unwrap();
+
+                create_interaction_response(&description, false)
             } else {
                 create_interaction_response("This ship was not intended for you.", true)
             }
         } else {
-            let embed = EmbedBuilder::new()
-                .color(0xFF0000)
-                .description("Unable to process ship mentions")
-                .build();
-
-            Ok(
-                InteractionResponse {
-                    data: Some(
-                        InteractionResponseDataBuilder::new()
-                            .embeds([embed])
-                            .flags(MessageFlags::EPHEMERAL)
-                            .build()
-                    ),
-                    kind: InteractionResponseType::ChannelMessageWithSource
-                }
-            ) 
+            create_interaction_response("No mentions found in ship message.", true)
         }
     } else {
         let embed = EmbedBuilder::new()
@@ -149,20 +149,23 @@ pub async fn handle_component(component: MessageComponentInteraction, context: A
         ) 
     };
 
-
-    if let Ok(_) = context
+    if let Err(_) = context
         .interaction_client()
         .create_response(component.id, &component.token, &interaction_response.unwrap())
         .exec()
         .await
     {
-        if let Some(id) = button_presser_id {
-            let guild_id = component.guild_id.unwrap();
-            let initiator_id = component.message.interaction.unwrap().user.id;
-
-            context.database().create_ship(guild_id, initiator_id, id).await;
-        }
-    }  
+        context
+            .http()
+            .update_message(component.channel_id, component.message.id)
+            .content(Some("**RIP SHIP**"))
+            .unwrap()
+            .components(Some(&[]))
+            .unwrap()
+            .exec()
+            .await
+            .unwrap();   
+    }
 }
 
 pub fn humanize(mut milliseconds: u64) -> String {

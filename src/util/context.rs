@@ -51,6 +51,10 @@ impl Context {
         &self.database
     }
 
+    pub fn http(&self) -> &HttpClient {
+        &self.http
+    }
+
     pub fn hyper(&self) -> &Client<HttpsConnector<HttpConnector>> {
         &self.hyper
     }
