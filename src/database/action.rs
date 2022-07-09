@@ -13,12 +13,12 @@ pub struct CountedAction {
 impl fmt::Display for CountedAction {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let cuddle_text = if self.cuddle == 1 { ":heart: 1 cuddle".to_string() } else { format!(":heart: {} cuddles", self.cuddle) };
-        let handhold_text = if self.handhold == 1 { ":handshake: 1 handhold".to_string() } else { format!(":handshake: {} handholds", self.cuddle) };
-        let hug_text = if self.hug == 1 { ":hugging: 1 hug".to_string() } else { format!(":hugging: {} hugs", self.cuddle) };
-        let kiss_text = if self.kiss == 1 { ":kissing_heart: 1 kiss".to_string() } else { format!(":kissing_heart: {} kisses", self.cuddle) };
+        let handhold_text = if self.handhold == 1 { ":handshake: 1 handhold".to_string() } else { format!(":handshake: {} handholds", self.handhold) };
+        let hug_text = if self.hug == 1 { ":hugging: 1 hug".to_string() } else { format!(":hugging: {} hugs", self.hug) };
+        let kiss_text = if self.kiss == 1 { ":kissing_heart: 1 kiss".to_string() } else { format!(":kissing_heart: {} kisses", self.kiss) };
         let counts = if self.cuddle + self.handhold + self.hug + self.kiss > 0 {
             let parts = vec![(self.cuddle, cuddle_text), (self.handhold, handhold_text), (self.hug, hug_text), (self.kiss, kiss_text)];
-            
+
             parts.iter().filter_map(|(value, text)| {
                 if *value > 0 { Some(format!("{text}")) } else { None }
             }).collect::<Vec<String>>().join("\n")
@@ -46,10 +46,10 @@ impl Database {
         let client = self.get_object().await;
         let query = "
             SELECT
-                COUNT(cuddle)::INT2 AS cuddle,
-                COUNT(handhold)::INT2 AS handhold,
-                COUNT(hug)::INT2 AS hug,
-                COUNT(kiss)::INT2 AS kiss
+                SUM(cuddle)::INT2 AS cuddle,
+                SUM(handhold)::INT2 AS handhold,
+                SUM(hug)::INT2 AS hug,
+                SUM(kiss)::INT2 AS kiss
             FROM
                 action
             WHERE
