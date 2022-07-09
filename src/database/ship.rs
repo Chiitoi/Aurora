@@ -24,7 +24,7 @@ impl From<Row> for Ship {
 impl Database {
     pub async fn create_ship(&self, guild_id: Id<GuildMarker>, id_one: Id<UserMarker>, id_two: Id<UserMarker>) {
         let client = self.get_object().await;
-        let query = "INSERT INTO ship(guild_id, combined_ids) VALUES($1, $2);";
+        let query = "INSERT INTO ship(guild_id, combined_ids) VALUES($1, $2) ON CONFLICT DO NOTHING;";
 
         client.query(
             query,
