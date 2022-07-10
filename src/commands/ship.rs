@@ -1,11 +1,11 @@
 use chrono::Utc;
-use crate::util::{context::Context, helper::{create_interaction_response, humanize}};
+use crate::{database::Ship, util::{context::Context, helper::{create_interaction_response, humanize}}};
 use std::sync::Arc;
 use twilight_interactions::command::{CommandModel, CreateCommand, ResolvedUser};
 use twilight_model::{
     application::component::{action_row::ActionRow, button::Button},
     application::{interaction::ApplicationCommand, component::{button::ButtonStyle, Component}},
-    http::interaction::{InteractionResponse, InteractionResponseType}, id::Id
+    http::interaction::{InteractionResponse, InteractionResponseType}
 };
 use twilight_util::builder::{embed::{EmbedBuilder, EmbedFieldBuilder}, InteractionResponseDataBuilder};
 
@@ -109,22 +109,17 @@ impl ShipCommand {
                 None => create_interaction_response("You are not shipped!", true)
             },
             ShipCommand::Show(_) => match context.database().read_ship(guild_id, member_id).await {
-                Some(ship) => {
-                    let ship_name = ship.name;
-                    let ids: Vec<&str> = ship.combined_ids.split("-").collect();
-                    let mut ids_iter = ids.iter();
-                    let id_one = Id::new(ids_iter.nth(0).unwrap().parse::<u64>()?);
-                    let id_two = Id::new(ids_iter.nth(0).unwrap().parse::<u64>()?);
+                Some(Ship { id_one, id_two, name, created_at, .. }) => {
                     let counts = context.database().read_action_counts(guild_id, id_one, id_two).await;
                     let now = Utc::now().naive_utc();
-                    let milliseconds = now.timestamp_millis() - ship.created_at.timestamp_millis();
+                    let milliseconds = now.timestamp_millis() - created_at.timestamp_millis();
                     let duration = humanize(milliseconds as u64);
                     let embed = EmbedBuilder::new()
                         .color(0xF8F8FF)
                         .description(format!("<@{}> loves, and is loved by, <@{}>", id_one, id_two))
                         .field(EmbedFieldBuilder::new("Counts", counts.to_string()).build())
                         .field(EmbedFieldBuilder::new("Duration", duration).build())
-                        .title(format!("The \"{ship_name}\" ship"))
+                        .title(format!("The \"{name}\" ship"))
                         .build();
 
                     Ok(

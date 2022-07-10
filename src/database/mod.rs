@@ -5,6 +5,13 @@ pub mod setting;
 pub mod shared_role;
 pub mod ship;
 
+pub use action::CountedAction;
+pub use level_role::LevelRole;
+pub use member::Member;
+pub use setting::Setting;
+pub use shared_role::SharedRole;
+pub use ship::Ship;
+
 use crate::constants::DATABASE_URL;
 use deadpool_postgres::{Client, Manager, ManagerConfig, Pool, RecyclingMethod};
 use std::str::FromStr;
@@ -95,12 +102,14 @@ impl Database {
             );
             CREATE TABLE IF NOT EXISTS public.ship (
                 guild_id INT8 NOT NULL,
-                combined_ids TEXT NOT NULL,
+                id_one INT8 NOT NULL,
+                id_two INT8 NOT NULL,      
                 name TEXT NOT NULL DEFAULT 'Bluenose',
                 created_at TIMESTAMPTZ(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
             );
 
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_ship_combined_ids ON public.ship USING btree (combined_ids);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_ship_guild_id_id_one ON public.ship USING btree (guild_id, id_one);
+            CREATE UNIQUE INDEX IF NOT EXISTS idx_ship_guild_id_id_two ON public.ship USING btree (guild_id, id_two);
         ";
 
         client.batch_execute(schema_query).await.unwrap();

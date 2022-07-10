@@ -102,21 +102,23 @@ pub async fn handle_component(component: MessageComponentInteraction, context: A
     let interaction_response = if let Some(button_presser) = component.member {
         if let Some(mention) = component.message.mentions.into_iter().nth(0) {
             if button_presser.user.unwrap().id.eq(&mention.id) {
-                let (description, edit) = if component.data.custom_id == "accept" {
-                    let guild_id = component.guild_id.unwrap();
-                    let initiator_id = component.message.interaction.unwrap().user.id;
-                    
-                    context.database().create_ship(guild_id, initiator_id, mention.id).await;
-
-                    (":tada: Congrats! Your ship has sailed! :tada:".into(), "**SHIPPED!!**")
-                } else {
-                    (format!("**{}** has sank the ship, it looks like it was never meant to be :pensive:", mention.name), "**RIP SHIP**")
+                let guild_id = component.guild_id.unwrap();
+                let t = format!("**{}** has sank the ship, it looks like it was never meant to be :pensive:", mention.name);
+                let (description, content, ephemeral) = match context.database().read_ship(guild_id, mention.id).await {
+                    Some(_) => ("You are already shipped!", Some("**ALREADY SHIPPED!!**"), true),
+                    None => if component.data.custom_id == "accept" {                       
+                        context.database().create_ship(guild_id, component.message.interaction.unwrap().user.id, mention.id).await;
+    
+                        (":tada: Congrats! Your ship has sailed! :tada:", Some("**SHIPPED!!**"), false)
+                    } else {
+                        (t.as_str(), Some("**RIP SHIP**"), false)
+                    }
                 };
 
                 context
                     .http()
                     .update_message(component.channel_id, component.message.id)
-                    .content(Some(edit))
+                    .content(content)
                     .unwrap()
                     .components(Some(&[]))
                     .unwrap()
@@ -124,7 +126,7 @@ pub async fn handle_component(component: MessageComponentInteraction, context: A
                     .await
                     .unwrap();
 
-                create_interaction_response(&description, false)
+                create_interaction_response(description, ephemeral)               
             } else {
                 create_interaction_response("This ship was not intended for you.", true)
             }
