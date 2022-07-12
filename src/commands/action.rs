@@ -88,7 +88,7 @@ struct OtakuGIFResponse {
     url: String
 }
 
-async fn act_and_count(command: ApplicationCommand, context: &Arc<Context>, action: &Action) -> (String, String) {
+async fn act_and_count(command: ApplicationCommand, context: &Arc<Context>, action: &Action) -> (Option<String>, String, String) {
     let guild_id = command.guild_id.unwrap();
     let member_id = command.author_id().unwrap();
     let recipient_id = match command.data.options.first() {
@@ -99,10 +99,15 @@ async fn act_and_count(command: ApplicationCommand, context: &Arc<Context>, acti
         None => member_id,
     };
     let count = context.database().upsert_action(guild_id, member_id, recipient_id, action.as_str()).await;
-    let description = if member_id.eq(&recipient_id) {
-        format!("*<@{member_id}> {} themselves*", action.as_plural())
+    let content = if member_id.eq(&recipient_id) {
+        None
     } else {
-        format!("*<@{member_id}> {} <@{recipient_id}>*", action.action_phrase())
+        Some(format!("<@{recipient_id}>"))
+    };
+    let description = if member_id.eq(&recipient_id) {
+        format!("*<@{member_id}> {} themselves!*", action.as_plural())
+    } else {
+        format!("*<@{member_id}> {} you!*", action.action_phrase())
     };
     let footer_text = match count {
         1 =>  if member_id.eq(&recipient_id) {
@@ -113,7 +118,7 @@ async fn act_and_count(command: ApplicationCommand, context: &Arc<Context>, acti
         _ => format!("That's {count} {} now!", action.as_plural())
     };
 
-    (description, footer_text)
+    (content, description, footer_text)
 }
 
 async fn get_image_source(context: &Arc<Context>, action: &Action) -> ImageSource {
@@ -127,7 +132,7 @@ async fn get_image_source(context: &Arc<Context>, action: &Action) -> ImageSourc
 }
 
 pub async fn get_interaction_response(command: ApplicationCommand, context: &Arc<Context>, action: Action) -> Result<InteractionResponse, anyhow::Error> {
-    let (description, footer_text) = act_and_count(command, &context, &action).await;
+    let (content, description, footer_text) = act_and_count(command, &context, &action).await;
     let image_source = get_image_source(context, &action).await;
     let embed = EmbedBuilder::new()
         .color(0xF8F8FF)
@@ -135,15 +140,15 @@ pub async fn get_interaction_response(command: ApplicationCommand, context: &Arc
         .footer(EmbedFooterBuilder::new(footer_text))
         .image(image_source)
         .build();
+    let interation_response_data = match content {
+        Some(content) => InteractionResponseDataBuilder::new()
+            .content(content)
+            .embeds([embed])
+            .build(),
+        None => InteractionResponseDataBuilder::new()
+            .embeds([embed])
+            .build()
+    };
 
-    Ok(
-        InteractionResponse {
-            data: Some(
-                InteractionResponseDataBuilder::new()
-                    .embeds([embed])
-                    .build()
-            ),
-            kind: InteractionResponseType::ChannelMessageWithSource
-        }
-    )
+    Ok(InteractionResponse { data: Some(interation_response_data), kind: InteractionResponseType::ChannelMessageWithSource })
 }
