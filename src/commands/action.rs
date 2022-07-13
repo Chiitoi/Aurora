@@ -24,6 +24,7 @@ pub enum Action {
     Pinch,
     Poke,
     Punch,
+    Shrug,
     Tickle
 }
 
@@ -40,6 +41,7 @@ impl Action {
             Action::Pinch => "pinches",
             Action::Poke => "pokes",
             Action::Punch => "punches",
+            Action::Shrug => "shrugs at",
             Action::Tickle => "tickles"
         }
     }
@@ -56,6 +58,7 @@ impl Action {
             Action::Pinch => "pinches",
             Action::Poke => "pokes",
             Action::Punch => "punches",
+            Action::Shrug => "shrugs",
             Action::Tickle => "tickles"
         }
     }
@@ -72,6 +75,7 @@ impl Action {
             Action::Pinch => "pinch",
             Action::Poke => "poke",
             Action::Punch => "punch",
+            Action::Shrug => "shrug",
             Action::Tickle => "tickle"
         }
     }
@@ -105,7 +109,7 @@ async fn act_and_count(command: ApplicationCommand, context: &Arc<Context>, acti
         Some(format!("<@{recipient_id}>"))
     };
     let description = if member_id.eq(&recipient_id) {
-        format!("*<@{member_id}> {} themselves!*", action.as_plural())
+        format!("*<@{member_id}> {} themselves!*", action.action_phrase())
     } else {
         format!("*<@{member_id}> {} you!*", action.action_phrase())
     };

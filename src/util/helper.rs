@@ -50,6 +50,7 @@ pub async fn handle_command(command: ApplicationCommand, context: Arc<Context>) 
         "rate" => RateCommand::run(command).await,
         "ship" => ShipCommand::run(command, &context).await,
         "punch" => get_interaction_response(command, &context, Action::Punch).await,
+        "shrug" => get_interaction_response(command, &context, Action::Shrug).await,
         "tickle" => get_interaction_response(command, &context, Action::Tickle).await,
         name => {
             let embed = EmbedBuilder::new()
@@ -201,6 +202,7 @@ pub async fn register_commands(context: &Arc<Context>) {
         Action::create_action_command(Action::Pinch, "Grab those other cheeks ;)".into()),
         Action::create_action_command(Action::Poke, "👉".into()),
         Action::create_action_command(Action::Punch, "For when someone needs to be knocked out".into()),
+        Action::create_action_command(Action::Shrug, "Meh.".into()),
         Action::create_action_command(Action::Tickle, "You know what this is...".into()),
         BioCommand::create_command().into(),
         KillCommand::create_command().into(),
