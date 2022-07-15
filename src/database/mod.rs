@@ -65,6 +65,7 @@ impl Database {
                 poke INT2 NOT NULL DEFAULT 0,
                 punch INT2 NOT NULL DEFAULT 0,
                 shrug INT2 NOT NULL DEFAULT 0,
+                slap INT2 NOT NULL DEFAULT 0,
                 tickle INT2 NOT NULL DEFAULT 0,
                 CONSTRAINT ck_action PRIMARY KEY (guild_id, member_id, recipient_id)
             );

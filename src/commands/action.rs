@@ -25,6 +25,7 @@ pub enum Action {
     Poke,
     Punch,
     Shrug,
+    Slap,
     Tickle
 }
 
@@ -42,6 +43,7 @@ impl Action {
             Action::Poke => "pokes",
             Action::Punch => "punches",
             Action::Shrug => "shrugs at",
+            Action::Slap => "slaps",
             Action::Tickle => "tickles"
         }
     }
@@ -59,6 +61,7 @@ impl Action {
             Action::Poke => "pokes",
             Action::Punch => "punches",
             Action::Shrug => "shrugs",
+            Action::Slap => "slaps",
             Action::Tickle => "tickles"
         }
     }
@@ -76,6 +79,7 @@ impl Action {
             Action::Poke => "poke",
             Action::Punch => "punch",
             Action::Shrug => "shrug",
+            Action::Slap => "slap",
             Action::Tickle => "tickle"
         }
     }
