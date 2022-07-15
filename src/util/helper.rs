@@ -47,11 +47,11 @@ pub async fn handle_command(command: ApplicationCommand, context: Arc<Context>) 
         "pat" => get_interaction_response(command, &context, Action::Pat).await,
         "pinch" => get_interaction_response(command, &context, Action::Pinch).await,
         "poke" => get_interaction_response(command, &context, Action::Poke).await,
+        "punch" => get_interaction_response(command, &context, Action::Punch).await,
         "rate" => RateCommand::run(command).await,
         "ship" => ShipCommand::run(command, &context).await,
-        "slap" => get_interaction_response(command, &context, Action::Slap).await,
-        "punch" => get_interaction_response(command, &context, Action::Punch).await,
         "shrug" => get_interaction_response(command, &context, Action::Shrug).await,
+        "slap" => get_interaction_response(command, &context, Action::Slap).await,
         "tickle" => get_interaction_response(command, &context, Action::Tickle).await,
         name => {
             let embed = EmbedBuilder::new()
