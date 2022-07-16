@@ -37,6 +37,7 @@ pub fn create_interaction_response(description: &str, ephemeral: bool) -> Result
 pub async fn handle_command(command: ApplicationCommand, context: Arc<Context>) {
     let ApplicationCommand { id, token, ..  } = command.clone();
     let mut interaction_response = match command.data.name.as_str() {
+        "8ball" => EightBallCommand::run(command).await,
         "bio" => BioCommand::run(command, &context).await,
         "bite" => get_interaction_response(command, &context, Action::Bite).await,
         "cuddle" => get_interaction_response(command, &context, Action::Cuddle).await,
@@ -207,6 +208,7 @@ pub async fn register_commands(context: &Arc<Context>) {
         Action::create_action_command(Action::Slap, "Time to wake them up!".into()),
         Action::create_action_command(Action::Tickle, "You know what this is...".into()),
         BioCommand::create_command().into(),
+        EightBallCommand::create_command().into(),
         KillCommand::create_command().into(),
         RateCommand::create_command().into(),
         ShipCommand::create_command().into()
